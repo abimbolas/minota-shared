@@ -1,2 +1,1 @@
-# minota-shared
-Shared libs for Minotá
+# Shared libs for Minotá
