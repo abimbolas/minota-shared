@@ -1,9 +1,10 @@
 const yaml = require('js-yaml');
+// const moment = require('moment');
 
 // According to YAML spec, '---' divide parts of document (config, content),
 // and '...' divide whole documents (notes)
 
-function parseNotes(text) {
+function parseNotes(text, notesConfig) {
   return text.trim()
     .split(/^\.\.\.\s*$/gm)
     .map(part => part.trim())
@@ -13,9 +14,9 @@ function parseNotes(text) {
         .split(/^---\s*$/gm)
         .map(part => part.trim());
       const content = parts.slice(-1)[0];
-      const config = parts.slice(-2, -1)[0];
+      const config = yaml.safeLoad(parts.slice(-2, -1)[0] || '') || {};
       return {
-        config: config && yaml.safeLoad(config),
+        config: Object.assign({}, notesConfig, config),
         content: content || '',
       };
     });
