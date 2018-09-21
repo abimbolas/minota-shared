@@ -45,7 +45,7 @@ function readAncestorsFrom(currentPath = '.') {
     } catch (error) {
       prevCwd = cwd;
       cwd = path.resolve(cwd, '..');
-      topicPath.push(prevCwd
+      topicPath.unshift(prevCwd
         .replace(cwd, '')
         .replace(/^\\/, '')
         .replace(/^\\/, '')
