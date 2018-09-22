@@ -23,7 +23,7 @@ function readConfigRecursiveFrom(configPath) {
     // try to load minota.json config
     try {
       config = JSON.parse(fs.readFileSync(path.resolve(cwd, './minota.json'), 'utf-8'));
-      console.log(`Using config in ${path.resolve(cwd, './minota.json')}.`);
+      console.log(`Using config in ${path.resolve(cwd, './minota.json').replace(/\\/g, '/')}.`);
       break;
     } catch (error) {
       console.log(`minota.json not found at '${path.resolve(cwd)}'.`);
@@ -31,28 +31,44 @@ function readConfigRecursiveFrom(configPath) {
       cwd = path.resolve(cwd, '..');
     }
   }
-  return config;
+  if (config) {
+    const foundPath = cwd.replace(/\\/g, '/').split('/');
+    const currentPath = path.resolve(configPath).replace(/\\/g, '/').split('/');
+    const parentsLength = currentPath.length - foundPath.length;
+    return {
+      config,
+      path: cwd.replace(/\\/g, '/'),
+      breadcrumbs: parentsLength ? currentPath.slice(-parentsLength).join('/') : '',
+    };
+  }
+  return {};
 }
 
-function readAncestorsFrom(currentPath = '.') {
-  let cwd = path.resolve(currentPath);
-  let prevCwd;
-  const topicPath = [];
-  while (cwd !== prevCwd) {
-    try {
-      fs.statSync(path.resolve(cwd, './minota.json'));
+function searchConfig() {
+  const searches = [
+    function firstSearch() {
+      return readConfigRecursiveFrom('.');
+    },
+    function secondSearch() {
+      const homepath = os.homedir().replace(/\\/g, '/');
+      const config = readConfigFrom(homepath);
+      if (config) {
+        return {
+          config,
+          path: homepath,
+        };
+      }
+      return {};
+    },
+  ];
+  let result = {};
+  for (let i = 0; i < searches.length; i += 1) {
+    result = searches[i]();
+    if (result.config) {
       break;
-    } catch (error) {
-      prevCwd = cwd;
-      cwd = path.resolve(cwd, '..');
-      topicPath.unshift(prevCwd
-        .replace(cwd, '')
-        .replace(/^\\/, '')
-        .replace(/^\\/, '')
-        .replace(/^\//, ''));
     }
   }
-  return topicPath;
+  return result.config ? result : {};
 }
 
 const defaultConfig = {
@@ -69,9 +85,9 @@ const defaultConfig = {
 // If not preset, use default config
 module.exports = {
   readFrom: readConfigFrom,
-  readAncestors: readAncestorsFrom,
+  search: searchConfig,
   read() {
-    return readConfigRecursiveFrom('.')
+    return readConfigRecursiveFrom('.').config
       || readConfigFrom(os.homedir())
       || console.log('Using default config.')
       || defaultConfig;
