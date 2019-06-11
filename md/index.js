@@ -18,7 +18,7 @@ function parseNotes(text, notesConfig = {}) {
       const config = yaml.safeLoad(parts.slice(-2, -1)[0] || '') || {};
       if (config.topic) {
         lastTopic = config.topic;
-      } else {
+      } else if (lastTopic) {
         config.topic = lastTopic;
       }
       return {
