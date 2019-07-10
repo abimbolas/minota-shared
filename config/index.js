@@ -73,10 +73,7 @@ function searchConfig() {
 
 const defaultConfig = {
   storage: {
-    type: 'file',
-    file: {
-      path: '.minota',
-    },
+    url: 'file://.minota'
   },
 };
 
