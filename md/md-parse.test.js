@@ -11,7 +11,13 @@ describe('Parse text into note object(s)', () => {
   });
 
   it('omit empty notes when lots of them', () => {
-    const text = '...\n...\r\n...\r\n  \n...';
+    const text = [
+      '...',
+      '...',
+      '...',
+      ' ',
+      '...'
+    ].join(os.EOL);
     const notes = parseNotes(text);
     assert.equal(notes.length, 0);
   });
@@ -36,7 +42,7 @@ describe('Parse text into note object(s)', () => {
   });
 
   it('should find config', () => {
-    const text = '---\r\nid: 5\n---\nHello ';
+    const text = '\n---\r\nid: 5\n---\nHello ';
     const notes = parseNotes(text);
     assert.equal(notes.length, 1);
     assert.equal(notes[0].content, 'Hello');
@@ -71,8 +77,8 @@ describe('Parse text into note object(s)', () => {
     assert.equal(notes.length, 2);
     assert.equal(notes[0].content, 'Hello');
     assert.equal(notes[1].content, 'Other hello');
-    assert.isNotOk(notes[0].config);
-    assert.isNotOk(notes[1].config);
+    assert.deepEqual(notes[0].config, {});
+    assert.deepEqual(notes[1].config, {});
   });
 
   it('should parse notes without configs and config markers', () => {
@@ -88,8 +94,8 @@ describe('Parse text into note object(s)', () => {
     assert.equal(notes.length, 2);
     assert.equal(notes[0].content, 'Hello');
     assert.equal(notes[1].content, 'Other hello');
-    assert.isNotOk(notes[0].config);
-    assert.isNotOk(notes[1].config);
+    assert.deepEqual(notes[0].config, {});
+    assert.deepEqual(notes[1].config, {});
   });
 
   it('should do not parse empty note', () => {
@@ -109,5 +115,33 @@ describe('Parse text into note object(s)', () => {
     assert.equal(notes.length, 1);
     assert.equal(notes[0].content, '');
     assert.equal(notes[0].config.id, 5);
+  });
+
+  it('should ignore extra \'---\' in note content', () => {
+    const text = [
+      'id: 1',
+      '--- ',
+      'id: 7',
+      '',
+      '---',
+      'expected another line',
+      '',
+      '---   ',
+      '',
+      '',
+      'until another document',
+      '',
+      '---',
+      '',
+      'and other stuff',
+      '...'
+    ].join(os.EOL);
+    const notes = parseNotes(text);
+    assert.equal(notes.length, 1);
+    assert.equal(notes[0].config.id, 7);
+    assert.isOk(notes[0].content.match(/expected another line/));
+    assert.isOk(notes[0].content.match(/until another document/));
+    assert.isOk(notes[0].content.match(/and other stuff/));
+    assert.isOk(notes[0].content.match(/---/g).length > 1);
   });
 });
