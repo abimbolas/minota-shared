@@ -1,21 +1,40 @@
 const yaml = require('js-yaml');
-// const moment = require('moment');
+const os = require('os');
 
 // According to YAML spec, '---' divide parts of document (config, content),
-// and '...' (or '* * *') divide whole documents (notes)
+// and '...' divide whole documents (notes).
+//
+// We expect document to consist of 2 parts - config and content.
+// Config or content might be empty.
+// Ignore '---' if it is part of the content.
 
 function parseNotes(text, notesConfig = {}) {
   let lastTopic = notesConfig.topic;
   return text.trim()
-    .split(/^\.\.\.\s*$|\s*\* \* \*\s*$/gm)
+    .split(/^\.\.\.\s*$/gm)
     .map(part => part.trim())
     .filter(part => part)
     .map((raw) => {
-      const parts = raw
-        .split(/^---\s*$/gm)
-        .map(part => part.trim());
-      const content = parts.slice(-1)[0];
-      const config = yaml.safeLoad(parts.slice(-2, -1)[0] || '') || {};
+      let content, config
+      let parts = raw.split(/^---[\t\v\f ]*$/gm);
+      // If no '---', it is just content
+      if (parts.length === 1 && parts[0] === raw) {
+        content = parts[0]
+        config = {}
+      }
+      // If just one '---' was present, that means it is only one start of
+      // document, so treat as content.
+      else if (parts.length === 2) {
+        content = parts[1].replace(new RegExp('^' + os.EOL), '')
+        config = {}
+      }
+      // Only if two or more '---' present, it is full note,
+      // and all other '---' after first two is considered a part of document content
+      else {
+        content = parts.slice(2).join('---').replace(new RegExp('^' + os.EOL), '')
+        config = yaml.safeLoad(parts[1].trim()) || {}
+      }
+      // Verify config
       if (config.topic) {
         lastTopic = config.topic;
       } else if (lastTopic) {

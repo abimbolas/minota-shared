@@ -16,7 +16,7 @@ describe('Stringify notes into text', () => {
       { content: 'Hi all' },
     ];
     const text = stringifyNotes(notes);
-    assert.equal(text, 'Hello\n...\nHi all');
+    assert.equal(text, 'Hello\n\n...\nHi all');
   });
 
   it('should stringify with configs', () => {
@@ -25,6 +25,6 @@ describe('Stringify notes into text', () => {
       { content: 'No-config' },
     ];
     const text = stringifyNotes(notes);
-    assert.equal(text, '---\nid: 6\ndraft: true\ndate: Jul\n---\nHello\n...\nNo-config');
+    assert.equal(text, '---\nid: 6\ndraft: true\ndate: Jul\n---\nHello\n\n...\nNo-config');
   });
 });
